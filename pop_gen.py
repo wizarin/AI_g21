@@ -9,8 +9,10 @@ def pop_gen(pop_size, chromosome):
     pop = [[]]*pop_size
     for i in range(pop_size):
         for j in range(len(chromosome)):
-            for k in range(len(chromosome[j])):
+            for k in range(0, len(chromosome[j]), 3):
                 chromosome[j][k] = random.randint(-157,157)/100
+                chromosome[j][k+1] = random.randint(-200,100)/100
+                chromosome[j][k+2] = random.randint(-157,157)/100
         pop[i] = chromosome
     return pop
 
