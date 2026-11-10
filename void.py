@@ -213,7 +213,7 @@ print("")
 TARGET_Z = 0.300
 
 i = 0
-flag = True
+timestep += 500
 while robot.step(timestep) != -1:
 
     # -----------------------------------------------------
@@ -259,91 +259,60 @@ while robot.step(timestep) != -1:
     #
     # -----------------------------------------------------
 
-    vectors = [
-        [random.uniform(-56, 56) for _ in range(6)]
-        for _ in range(300)
-    ]
 
-    # right_thigh += math.radians(vectors[i][0])
-    # right_knee -= math.radians(vectors[i][1])
-    # right_hip += math.radians(vectors[i][2])
-
-    # left_thigh -= math.radians(vectors[i][3])
-    # left_knee += math.radians(vectors[i][4])
-    # left_hip -= math.radians(vectors[i][5])
-    right_thigh = math.radians(vectors[i][0])
-    right_knee = math.radians(vectors[i][1])
-    right_hip = math.radians(vectors[i][2])
-
-    left_thigh = math.radians(vectors[i][3])
-    left_knee = math.radians(vectors[i][4])
-    left_hip = math.radians(vectors[i][5])
+    def pop_gen(pop_size, chromosome):
+        pop = [[]]*pop_size
+        for i in range(pop_size):
+            for j in range(len(chromosome)):
+                for k in range(0, len(chromosome[j]), 3):
+                    chromosome[j][k] = random.randint(-157,157)/100
+                    chromosome[j][k+1] = random.randint(-157,157)/100
+                    chromosome[j][k+2] = random.randint(-200,100)/100
+                    
+            pop[i] = chromosome
+        return pop
 
 
-    # -----------------------------------------------------
-    # COMMAND RIGHT LEGS
-    # -----------------------------------------------------
+    pop_size = 10
+    chromosome = [[[]]*24]*300
 
-    for leg in right_legs:
+    pop = pop_gen(pop_size, chromosome)
 
-        if flag:
-            motors[
-                f"{leg}_thigh_joint"
-            ].setPosition(
-                right_thigh
-            )
 
-            motors[
-                f"{leg}_knee_joint"
-            ].setPosition(
-                right_knee
-            )
+    for individual in pop:
+        for vector in individual:
+            # right_thigh = math.radians(indi[i][0])
+            # right_knee = math.radians(vectors[i][1])
+            # right_hip = math.radians(vectors[i][2])
 
-            motors[
-                f"{leg}_hip_joint"
-            ].setPosition(
-                right_hip
-            )
-        flag = not flag
+            # left_thigh = math.radians(vectors[i][3])
+            # left_knee = math.radians(vectors[i][4])
+            # left_hip = math.radians(vectors[i][5])
 
-    # -----------------------------------------------------
-    # COMMAND LEFT LEGS
-    # -----------------------------------------------------
+            # -----------------------------------------------------
+            # COMMAND ALL LEGS
+            # -----------------------------------------------------
+            i = 0
+            for leg in all_legs:
+                for joint_type in ["hip_joint", "thigh_joint", "knee_joint"]:
+                    motors[
+                        f"{leg}_{joint_type}"
+                    ].setPosition(
+                        vector[i]
+                    )
+                    i += 1
 
-    for leg in left_legs:
-        if flag:
-            motors[
-                f"{leg}_thigh_joint"
-            ].setPosition(
-                left_thigh
-            )
+            # -----------------------------------------------------
+            # REPORT POSITION
+            # -----------------------------------------------------
 
-            motors[
-                f"{leg}_knee_joint"
-            ].setPosition(
-                left_knee
-            )
-
-            motors[
-                f"{leg}_hip_joint"
-            ].setPosition(
-                left_hip
-            )
-        flag = not flag
-
-    i += 1
-    flag = not flag
-    # -----------------------------------------------------
-    # REPORT POSITION
-    # -----------------------------------------------------
-
-    print(
-        f"Z = {current_z:.4f} m | "
-        f"R thigh = {math.degrees(right_thigh):.2f}° | "
-        f"R knee = {math.degrees(right_knee):.2f}° | "
-        f"L thigh = {math.degrees(left_thigh):.2f}° | "
-        f"L knee = {math.degrees(left_knee):.2f}°"
-    )
+            #print(
+            #    f"Z = {current_z:.4f} m | "
+             #   f"R thigh = {math.degrees(right_thigh):.2f}° | "
+              #  f"R knee = {math.degrees(right_knee):.2f}° | "
+               # f"L thigh = {math.degrees(left_thigh):.2f}° | "
+                #f"L knee = {math.degrees(left_knee):.2f}°"
+            #)
 
 
 # =========================================================
