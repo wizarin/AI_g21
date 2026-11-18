@@ -209,110 +209,58 @@ print("LOWERING ROBOT")
 print("==============================================")
 print("")
 
+def pop_gen(pop_size, n_vectors=300):
+    pop = []
+    for _ in range(pop_size):
+        individual = []
+        for _ in range(n_vectors):
+            vector = []
+            for _ in range(8):                       # 8 legs
+                vector.append(random.randint(-157, 157) / 100)   # hip
+                vector.append(random.randint(-157, 157) / 100)   # thigh
+                vector.append(random.randint(-200, 100) / 100)   # knee
+            individual.append(vector)
+        pop.append(individual)
+    return pop
 
 TARGET_Z = 0.300
 
-i = 0
-timestep += 500
-while robot.step(timestep) != -1:
+pop_size = 25
+pop = pop_gen(pop_size)
 
-    # -----------------------------------------------------
-    # READ GPS
-    # -----------------------------------------------------
+dist_fitnesses = []
 
-    position = gps.getValues()
+for idx, individual in enumerate(pop):
+    start_x = gps.getValues()[0]
 
-    current_z = position[2]
+    for vector in individual:
+        j = 0
+        for leg in all_legs:
+            for joint_type in ["hip_joint", "thigh_joint", "knee_joint"]:
+                motors[f"{leg}_{joint_type}"].setPosition(vector[j])
+                j += 1
 
+        for _ in range(5):
+            if robot.step(timestep) == -1:
+                exit()
 
-    # -----------------------------------------------------
-    # CHECK WHETHER TARGET HEIGHT HAS BEEN REACHED
-    # -----------------------------------------------------
+    end_x = gps.getValues()[0]
+    dist_fit = end_x - start_x
+    dist_fitnesses.append(dist_fit)
+    print(f"Individual {idx}: fitness = {dist_fit:.4f}")
+   
+ranking = sorted(range(len(dist_fitnesses)),
+                 key=lambda i: dist_fitnesses[i],
+                 reverse=True)
 
-    if current_z >= TARGET_Z:
+print("")
+print("Ranking (best to worst):")
+for rank, i in enumerate(ranking, start=1):
+    print(f"Rank {rank}. Individual {i}: fitness = {dist_fitnesses[i]:.4f}")
 
-        print("")
-        print("==============================================")
-        print("TARGET HEIGHT REACHED")
-        print("==============================================")
+ranked_pop = [pop[i] for i in ranking]
+best = ranked_pop[0]
 
-        print(
-            f"GPS Z = {current_z:.4f} m"
-        )
-
-        break
-
-
-    # -----------------------------------------------------
-    # LOWER THE LEGS
-    # -----------------------------------------------------
-    #
-    # Right side:
-    #   thigh becomes more positive
-    #   knee becomes more negative
-    #
-    # Left side:
-    #   thigh becomes more negative
-    #   knee becomes more positive
-    #
-    # This increases the absolute movement symmetrically.
-    #
-    # -----------------------------------------------------
-
-
-    def pop_gen(pop_size, chromosome):
-        pop = [[]]*pop_size
-        for i in range(pop_size):
-            for j in range(len(chromosome)):
-                for k in range(0, len(chromosome[j]), 3):
-                    chromosome[j][k] = random.randint(-157,157)/100
-                    chromosome[j][k+1] = random.randint(-157,157)/100
-                    chromosome[j][k+2] = random.randint(-200,100)/100
-                    
-            pop[i] = chromosome
-        return pop
-
-
-    pop_size = 10
-    chromosome = [[[]]*24]*300
-
-    pop = pop_gen(pop_size, chromosome)
-
-
-    for individual in pop:
-        for vector in individual:
-            # right_thigh = math.radians(indi[i][0])
-            # right_knee = math.radians(vectors[i][1])
-            # right_hip = math.radians(vectors[i][2])
-
-            # left_thigh = math.radians(vectors[i][3])
-            # left_knee = math.radians(vectors[i][4])
-            # left_hip = math.radians(vectors[i][5])
-
-            # -----------------------------------------------------
-            # COMMAND ALL LEGS
-            # -----------------------------------------------------
-            i = 0
-            for leg in all_legs:
-                for joint_type in ["hip_joint", "thigh_joint", "knee_joint"]:
-                    motors[
-                        f"{leg}_{joint_type}"
-                    ].setPosition(
-                        vector[i]
-                    )
-                    i += 1
-
-            # -----------------------------------------------------
-            # REPORT POSITION
-            # -----------------------------------------------------
-
-            #print(
-            #    f"Z = {current_z:.4f} m | "
-             #   f"R thigh = {math.degrees(right_thigh):.2f}° | "
-              #  f"R knee = {math.degrees(right_knee):.2f}° | "
-               # f"L thigh = {math.degrees(left_thigh):.2f}° | "
-                #f"L knee = {math.degrees(left_knee):.2f}°"
-            #)
 
 
 # =========================================================
