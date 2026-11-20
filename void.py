@@ -225,7 +225,7 @@ def pop_gen(pop_size, n_vectors=300):
 
 TARGET_Z = 0.300
 
-pop_size = 25
+pop_size = 10
 pop = pop_gen(pop_size)
 
 dist_fitnesses = []
@@ -261,6 +261,34 @@ for rank, i in enumerate(ranking, start=1):
 ranked_pop = [pop[i] for i in ranking]
 best = ranked_pop[0]
 
+
+# =========================================================
+# TOURNAMENT SELECTION
+# =========================================================
+
+tourn_size = 3
+new_pop = []
+new_fitnesses = []
+
+for _ in range(len(ranked_pop)):
+    tournament = []
+
+    for _ in range(tourn_size):
+        ranked_index = random.randrange(len(ranked_pop))
+        original_index = ranking[ranked_index]
+        fitness = dist_fitnesses[original_index]
+
+        tournament.append((ranked_index, fitness, ranked_pop[ranked_index]))
+
+    ranked_index, fitness, winner = min(tournament, key=lambda item: item[0])
+
+    print(f"Selected winner: fitness = {fitness:.4f}")
+
+    new_pop.append(winner)
+    new_fitnesses.append(fitness)
+
+print(f"Selected {len(new_pop)} individuals for new_pop.")
+print("New population fitnesses:", new_fitnesses)
 
 
 # =========================================================
