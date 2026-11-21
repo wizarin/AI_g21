@@ -228,10 +228,11 @@ TARGET_Z = 0.300
 pop_size = 10
 pop = pop_gen(pop_size)
 
-dist_fitnesses = []
+fitnesses = []
 
 for idx, individual in enumerate(pop):
     start_x = gps.getValues()[0]
+    heights = 0
 
     for vector in individual:
         j = 0
@@ -244,19 +245,29 @@ for idx, individual in enumerate(pop):
             if robot.step(timestep) == -1:
                 exit()
 
+        heights = heights + gps.getValues()[2]
+
+    #end_z = gps.getValues()[2]
+    #print (end_z)
+    avg_height = heights / 300
+    print (avg_height)
+
     end_x = gps.getValues()[0]
     dist_fit = end_x - start_x
-    dist_fitnesses.append(dist_fit)
-    print(f"Individual {idx}: fitness = {dist_fit:.4f}")
+
+    fit = (dist_fit * 0.7 + avg_height * 0.3)
+
+    fitnesses.append(fit)
+    print(f"Individual {idx}: fitness = {fit:.4f}")
    
-ranking = sorted(range(len(dist_fitnesses)),
-                 key=lambda i: dist_fitnesses[i],
+ranking = sorted(range(len(fitnesses)),
+                 key=lambda i: fitnesses[i],
                  reverse=True)
 
 print("")
 print("Ranking (best to worst):")
 for rank, i in enumerate(ranking, start=1):
-    print(f"Rank {rank}. Individual {i}: fitness = {dist_fitnesses[i]:.4f}")
+    print(f"Rank {rank}. Individual {i}: fitness = {fitnesses[i]:.4f}")
 
 ranked_pop = [pop[i] for i in ranking]
 best = ranked_pop[0]
@@ -276,7 +287,7 @@ for _ in range(len(ranked_pop)):
     for _ in range(tourn_size):
         ranked_index = random.randrange(len(ranked_pop))
         original_index = ranking[ranked_index]
-        fitness = dist_fitnesses[original_index]
+        fitness = fitnesses[original_index]
 
         tournament.append((ranked_index, fitness, ranked_pop[ranked_index]))
 
