@@ -223,7 +223,7 @@ left_hip = TARGET_ANGLES["L"]["hip_joint"]
 joints = [right_thigh, right_knee, right_hip, left_thigh, left_knee, left_hip]
 
 # ---------------------------------------------------------
-self_node = robot.getFromDef("SPIDER_ROOT")
+self_node = robot.getSelf()  #getFromDef("SPIDER_ROOT")
 trans_field = self_node.getField("translation")
 rot_field = self_node.getField("rotation")
 
