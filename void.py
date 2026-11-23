@@ -232,6 +232,20 @@ START_ROT = list(rot_field.getSFRotation())
 STAND_Z = current_z
 STAND_HEIGHT = STAND_Z
 
+
+def set_one_leg_from_vector(vector, vector_index):
+    """Apply the genes for one leg and leave all other legs unchanged."""
+    leg_index = vector_index % len(all_legs)
+    leg = all_legs[leg_index]
+    gene_index = leg_index * 3
+
+    for joint_offset, joint_type in enumerate(
+        ["hip_joint", "thigh_joint", "knee_joint"]
+    ):
+        motors[f"{leg}_{joint_type}"].setPosition(
+            vector[gene_index + joint_offset]
+        )
+
 def reset_to_standing():
     self_node.resetPhysics()
     trans_field.setSFVec3f([START_TRANS[0], START_TRANS[1], START_TRANS[2] + 0.05])
@@ -285,12 +299,8 @@ dist_fitnesses = []
 for idx, individual in enumerate(pop):
     start_x = gps.getValues()[0]
 
-    for vector in individual:
-        j = 0
-        for leg in all_legs:
-            for joint_type in ["hip_joint", "thigh_joint", "knee_joint"]:
-                motors[f"{leg}_{joint_type}"].setPosition(vector[j])
-                j += 1
+    for vector_index, vector in enumerate(individual):
+        set_one_leg_from_vector(vector, vector_index)
 
         for _ in range(5):
             if robot.step(timestep) == -1:
@@ -346,12 +356,8 @@ def evaluate(individual):
 
     start_x = gps.getValues()[0]
 
-    for vector in individual:
-        j = 0
-        for leg in all_legs:
-            for joint_type in ["hip_joint", "thigh_joint", "knee_joint"]:
-                motors[f"{leg}_{joint_type}"].setPosition(vector[j])
-                j += 1
+    for vector_index, vector in enumerate(individual):
+        set_one_leg_from_vector(vector, vector_index)
 
         for _ in range(5):
             if robot.step(timestep) == -1:
@@ -428,12 +434,8 @@ def evaluate_height_first(individual):
     vectors_done = 0
     fallen = False
 
-    for vector in individual:
-        j = 0
-        for leg in all_legs:
-            for joint_type in ["hip_joint", "thigh_joint", "knee_joint"]:
-                motors[f"{leg}_{joint_type}"].setPosition(vector[j])
-                j += 1
+    for vector_index, vector in enumerate(individual):
+        set_one_leg_from_vector(vector, vector_index)
 
         for _ in range(STEPS_PER_VECTOR):
             if robot.step(timestep) == -1:
@@ -549,12 +551,8 @@ best = ga_best_individual
 print("Replaying best individual...")
 reset_to_standing()
 while True:                
-    for vector in best:
-        j = 0
-        for leg in all_legs:
-            for joint_type in ["hip_joint", "thigh_joint", "knee_joint"]:
-                motors[f"{leg}_{joint_type}"].setPosition(vector[j])
-                j += 1
+    for vector_index, vector in enumerate(best):
+        set_one_leg_from_vector(vector, vector_index)
         for _ in range(5):
             if robot.step(timestep) == -1:
                 exit()
