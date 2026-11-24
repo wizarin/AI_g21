@@ -29,7 +29,7 @@ W_SURVIVAL     = 5.0    # stay up for the whole gait
 W_FORWARD      = 1.0    # small bonus for moving forward while upright
 W_DRIFT        = 0.5    # small penalty for sideways drift
 FALL_Z         = 0.15   # below this the spider counts as collapsed (tune!)
-STEPS_PER_VECTOR = 5    # same as the original loops
+STEPS_PER_VECTOR = 10    
 HEIGHT_GATE = 0.7
 
 
@@ -233,18 +233,20 @@ STAND_Z = current_z
 STAND_HEIGHT = STAND_Z
 
 
-def set_one_leg_from_vector(vector, vector_index):
-    """Apply the genes for one leg and leave all other legs unchanged."""
-    leg_index = vector_index % len(all_legs)
-    leg = all_legs[leg_index]
-    gene_index = leg_index * 3
+VECTOR_LEG_ORDER = ["L1", "L2", "L3", "L4", "R4", "R3", "R2", "R1"]
+JOINT_ORDER = ["hip_joint", "thigh_joint", "knee_joint"]
 
-    for joint_offset, joint_type in enumerate(
-        ["hip_joint", "thigh_joint", "knee_joint"]
-    ):
-        motors[f"{leg}_{joint_type}"].setPosition(
-            vector[gene_index + joint_offset]
-        )
+
+def set_pose_from_vector(vector):
+    """Apply one complete 24-angle pose in the coursework's leg order."""
+    if len(vector) != 24:
+        raise ValueError(f"Expected 24 joint angles, got {len(vector)}")
+
+    for leg_index, leg in enumerate(VECTOR_LEG_ORDER):
+        for joint_index, joint_type in enumerate(JOINT_ORDER):
+            motors[f"{leg}_{joint_type}"].setPosition(
+                vector[leg_index * 3 + joint_index]
+            )
 
 def reset_to_standing():
     self_node.resetPhysics()
@@ -297,12 +299,13 @@ dist_fitnesses = []
 
 #------------------------------------------------
 for idx, individual in enumerate(pop):
+    reset_to_standing()
     start_x = gps.getValues()[0]
 
-    for vector_index, vector in enumerate(individual):
-        set_one_leg_from_vector(vector, vector_index)
+    for vector in individual:
+        set_pose_from_vector(vector)
 
-        for _ in range(5):
+        for _ in range(STEPS_PER_VECTOR):
             if robot.step(timestep) == -1:
                 exit()
 
@@ -356,10 +359,10 @@ def evaluate(individual):
 
     start_x = gps.getValues()[0]
 
-    for vector_index, vector in enumerate(individual):
-        set_one_leg_from_vector(vector, vector_index)
+    for vector in individual:
+        set_pose_from_vector(vector)
 
-        for _ in range(5):
+        for _ in range(STEPS_PER_VECTOR):
             if robot.step(timestep) == -1:
                 exit()
 
@@ -434,15 +437,23 @@ def evaluate_height_first(individual):
     vectors_done = 0
     fallen = False
 
-    for vector_index, vector in enumerate(individual):
-        set_one_leg_from_vector(vector, vector_index)
+    for vector in individual:
+        set_pose_from_vector(vector)
+        vector_completed = True
 
         for _ in range(STEPS_PER_VECTOR):
             if robot.step(timestep) == -1:
                 exit()
             height_samples.append(gps.getValues()[2])
+            # if height_samples[-1] < FALL_Z:
+            #     fallen = True
+            #     vector_completed = False
+            #     break
 
-        vectors_done += 1
+        if vector_completed:
+            vectors_done += 1
+        if fallen:
+            break
 
     end = gps.getValues()
 
@@ -454,8 +465,6 @@ def evaluate_height_first(individual):
     capped = [min(max(z, 0.0), STAND_HEIGHT) for z in height_samples]
     height_score = (sum(capped) / len(capped)) / STAND_HEIGHT
     survival     = vectors_done / len(individual)
-    if fallen:
-        survival = (vectors_done - 1) / len(individual)
 
     forward = end[0] - start[0]
     drift   = abs(end[1] - start[1])
@@ -551,9 +560,9 @@ best = ga_best_individual
 print("Replaying best individual...")
 reset_to_standing()
 while True:                
-    for vector_index, vector in enumerate(best):
-        set_one_leg_from_vector(vector, vector_index)
-        for _ in range(5):
+    for vector in best:
+        set_pose_from_vector(vector)
+        for _ in range(STEPS_PER_VECTOR):
             if robot.step(timestep) == -1:
                 exit()
                 
